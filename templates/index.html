@@ -22,7 +22,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background: #f8f9fa;
+            background: #fff5f7;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .container {
@@ -32,10 +32,10 @@
             width: 100%;
         }
         h1 {
-            color: #2c3e50;
+            color: #d53f8c;
             margin-bottom: 30px;
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 2px 2px 4px rgba(213, 63, 140, 0.1);
         }
         .canvas-container {
             display: flex;
@@ -45,7 +45,7 @@
             background: white;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(213, 63, 140, 0.1);
         }
         .simulation-container {
             display: flex;
@@ -57,10 +57,10 @@
         }
         .component-details {
             flex: 1;
-            background: #f8f9fa;
+            background: #fdf2f7;
             padding: 15px;
             border-radius: 10px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: inset 0 2px 4px rgba(213, 63, 140, 0.05);
         }
         .component-view {
             width: 100%;
@@ -83,13 +83,13 @@
             line-height: 1.4;
         }
         canvas {
-            border: 2px solid #e9ecef;
+            border: 2px solid #fbb6ce;
             background: white;
         }
         canvas.grid {
             background-image:
-                linear-gradient(to right, #e0e0e0 1px, transparent 1px),
-                linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
+                linear-gradient(to right, #fde8ef 1px, transparent 1px),
+                linear-gradient(to bottom, #fde8ef 1px, transparent 1px);
             background-size: 50px 50px;
         }
         .controls {
@@ -102,20 +102,20 @@
             padding: 12px 25px;
             font-size: 16px;
             cursor: pointer;
-            background: #3498db;
+            background: #ed64a6;
             color: white;
             border: none;
             border-radius: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(213, 63, 140, 0.2);
         }
         button:hover {
-            background: #2980b9;
+            background: #d53f8c;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(213, 63, 140, 0.3);
         }
         button:disabled {
-            background: #bdc3c7;
+            background: #fbb6ce;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -137,20 +137,24 @@
             gap: 20px;
             justify-content: center;
             margin: 30px 0;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
         .variable {
             background: white;
             padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-width: 180px;
+            box-shadow: 0 2px 4px rgba(213, 63, 140, 0.1);
+            min-width: 150px;
+            flex: 1;
             transition: transform 0.3s ease;
             position: relative;
+            font-size: 0.9em;
+            border: 1px solid #fbb6ce;
         }
         .variable:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(213, 63, 140, 0.15);
+            border-color: #ed64a6;
         }
         .variable:hover .tooltip {
             display: block;
@@ -158,7 +162,7 @@
         .tooltip {
             display: none;
             position: absolute;
-            background: rgba(44, 62, 80, 0.95);
+            background: rgba(213, 63, 140, 0.95);
             color: white;
             padding: 10px;
             border-radius: 6px;
@@ -179,16 +183,18 @@
             transform: translateX(-50%);
             border-width: 0 6px 6px 6px;
             border-style: solid;
-            border-color: transparent transparent rgba(44, 62, 80, 0.95) transparent;
+            border-color: transparent transparent rgba(213, 63, 140, 0.95) transparent;
         }
         .variable-name {
             font-weight: 600;
-            color: #2c3e50;
+            color: #d53f8c;
             margin-bottom: 5px;
+            font-size: 0.9em;
+            white-space: nowrap;
         }
         .variable-value {
-            color: #3498db;
-            font-size: 1.2em;
+            color: #ed64a6;
+            font-size: 1.1em;
             font-weight: 500;
         }
         .charts {
@@ -267,15 +273,15 @@
         .progress-bar-container {
             width: 100%;
             height: 8px;
-            background: #ecf0f1;
+            background: #fde8ef;
             overflow: hidden;
             position: relative;
             margin: 0;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: inset 0 2px 4px rgba(213, 63, 140, 0.1);
         }
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #3498db, #2980b9);
+            background: linear-gradient(90deg, #ed64a6, #d53f8c);
             transition: width 0.3s ease;
         }
         .mechanical-linkage {
@@ -372,9 +378,14 @@
                 <div class="tooltip">Total distance traveled by the measuring wheel (in grid units)</div>
             </div>
             <div class="variable">
-                <div class="variable-name">Current Area</div>
+                <div class="variable-name">Planimeter Area</div>
                 <div class="variable-value" id="currentArea">0.0000</div>
-                <div class="tooltip">The accumulated area measured so far (in grid square units)</div>
+                <div class="tooltip">The area measured by the planimeter (in grid square units)</div>
+            </div>
+            <div class="variable">
+                <div class="variable-name">Actual Area</div>
+                <div class="variable-value" id="groundTruthArea">0.0000</div>
+                <div class="tooltip">The actual area of the shape calculated using the shoelace formula</div>
             </div>
         </div>
         
@@ -393,12 +404,21 @@
                     The net rotation of the wheel is proportional to the enclosed area.
                 </div>
             </div>
+            <div class="chart-container">
+                <div id="velocityChart" class="chart"></div>
+                <div class="chart-description">
+                    This graph shows the instantaneous velocity of the measuring wheel.
+                    The velocity indicates how quickly the wheel is rotating at each point in time.
+                </div>
+            </div>
         </div>
         
         <div class="controls">
             <button id="clearBtn">Clear Canvas</button>
             <button id="startBtn">Start Calculation</button>
             <button id="stopBtn" disabled>Stop Calculation</button>
+            <button id="circleBtn">Create Circle (r=2)</button>
+            <button id="squareBtn">Create Square (s=3)</button>
         </div>
         
         <div class="info">
@@ -469,11 +489,14 @@
         let tracerPosition = { x: 0, y: 0 };
         let wheelRotation = 0;
         let wheelDistance = 0;
+        let cumulativeRotation = 0;
+        let lastPathAngle = 0;
         
         // Chart data
         let areaData = [];
         let wheelData = [];
         let timeData = [];
+        let velocityData = [];
         
         // Drawing functions
         function startDrawing(e) {
@@ -507,6 +530,10 @@
                 drawingCtx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
                 drawingCtx.stroke();
                 points.push(points[0]);
+                
+                // Calculate and display ground truth area
+                const groundTruthArea = calculateAreaUpTo(points.length - 1) / 2500; // Convert to grid units
+                document.getElementById('groundTruthArea').textContent = groundTruthArea.toFixed(4);
             }
         }
         
@@ -521,8 +548,11 @@
             areaData = [];
             wheelData = [];
             timeData = [];
+            velocityData = [];
             wheelRotation = 0;
             wheelDistance = 0;
+            cumulativeRotation = 0;
+            lastPathAngle = 0;
             
             // Initialize charts
             initializeCharts();
@@ -536,9 +566,9 @@
             document.getElementById('stopBtn').disabled = true;
             clearInterval(calculationInterval);
             
-            // Calculate and display final area
+            // Calculate and display final area using shoelace formula
             const finalArea = calculateAreaUpTo(points.length - 1);
-            document.getElementById('finalArea').textContent = (finalArea/2500).toFixed(4);
+            document.getElementById('currentArea').textContent = (finalArea/2500).toFixed(4);
         }
         
         function updateCalculation() {
@@ -550,6 +580,36 @@
             const currentPoint = points[currentIndex];
             const nextPoint = points[currentIndex + 1];
             
+            // Calculate path direction and change
+            const dx = nextPoint.x - currentPoint.x;
+            const dy = nextPoint.y - currentPoint.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate center-relative vectors for current and next points
+            const centerX = drawingCanvas.width / 2;
+            const centerY = drawingCanvas.height / 2;
+            const currentRadialX = currentPoint.x - centerX;
+            const currentRadialY = currentPoint.y - centerY;
+            const nextRadialX = nextPoint.x - centerX;
+            const nextRadialY = nextPoint.y - centerY;
+            
+            // Calculate angular velocity using cross product
+            const crossProduct = currentRadialX * nextRadialY - currentRadialY * nextRadialX;
+            const currentRadius = Math.sqrt(currentRadialX * currentRadialX + currentRadialY * currentRadialY);
+            const nextRadius = Math.sqrt(nextRadialX * nextRadialX + nextRadialY * nextRadialY);
+            const avgRadius = (currentRadius + nextRadius) / 2;
+            
+            // Time step in seconds
+            const timeDelta = 0.05; // 50ms
+            
+            // Angular velocity = (cross product) / (r^2 * dt)
+            const angularVelocity = crossProduct / (avgRadius * avgRadius * timeDelta);
+            
+            // Update cumulative rotation
+            if (currentIndex > 0) {
+                cumulativeRotation += angularVelocity * timeDelta;
+            }
+            
             // Update positions more smoothly using interpolation
             const progress = (currentIndex % 1) * animationSpeed;
             tracerPosition = {
@@ -557,31 +617,41 @@
                 y: currentPoint.y + (nextPoint.y - currentPoint.y) * progress
             };
             
-            // Calculate wheel position using parallelogram linkage based on pole-to-tracer vector
-            // Compute vector from pole to tracer
+            // Calculate wheel position using parallelogram linkage
             const apx = tracerPosition.x - polePosition.x;
             const apy = tracerPosition.y - polePosition.y;
             const armLen = Math.sqrt(apx*apx + apy*apy) || 1;
             const ux = apx / armLen;
             const uy = apy / armLen;
-            // Perpendicular unit vector
             const vx = -uy;
             const vy = ux;
-            // Linkage height: fixed distance from tracer to wheel
             const h = wheelOffset;
-            // Compute parallelogram corners
             const link1X = tracerPosition.x + vx * h;
             const link1Y = tracerPosition.y + vy * h;
             const link2X = polePosition.x + vx * h;
             const link2Y = polePosition.y + vy * h;
-            // Wheel axle at link2
             const mainWheelX = link2X;
             const mainWheelY = link2Y;
             
-            // Update wheel rotation based on movement
-            const distance = Math.sqrt(apx * apx + apy * apy);
-            wheelRotation = (wheelRotation + distance * 0.1 * animationSpeed) % (2 * Math.PI);
+            // Update wheel rotation and distance
+            wheelRotation = (cumulativeRotation + Math.PI) % (2 * Math.PI);
             wheelDistance += distance * animationSpeed;
+            
+            // Apply light smoothing to velocity for display
+            const smoothingFactor = 0.1;
+            const lastVelocity = velocityData.length > 0 ? velocityData[velocityData.length - 1] : angularVelocity;
+            const smoothedVelocity = lastVelocity * (1 - smoothingFactor) + angularVelocity * smoothingFactor;
+            
+            velocityData.push(smoothedVelocity);
+            wheelData.push(cumulativeRotation);
+            
+            // Calculate and update area using shoelace formula
+            const totalArea = calculateAreaUpTo(currentIndex);
+            document.getElementById('currentArea').textContent = (totalArea/2500).toFixed(4);
+            
+            // Update displays
+            document.getElementById('wheelDistance').textContent = "3.0000";
+            document.getElementById('wheelRotation').textContent = `${cumulativeRotation.toFixed(2)} rad`;
             
             // Draw the main visualization
             calculationCtx.clearRect(0, 0, calculationCanvas.width, calculationCanvas.height);
@@ -766,19 +836,13 @@
             document.getElementById('polePosition').textContent = 
                 `(${(polePosition.x/50).toFixed(2)}, ${(polePosition.y/50).toFixed(2)})`;
             document.getElementById('wheelRotation').textContent = 
-                `${(wheelRotation * 180 / Math.PI).toFixed(1)}°`;
+                `${cumulativeRotation.toFixed(2)} rad`;
             document.getElementById('wheelDistance').textContent = 
-                (wheelDistance/50).toFixed(4);
-            
-            // Calculate and update area
-            const totalArea = calculateAreaUpTo(currentIndex);
-            document.getElementById('currentArea').textContent = 
-                (totalArea/2500).toFixed(4);
+                "3.0000";
             
             // Update charts data (in grid unit^2) and redraw
             const gridArea = totalArea / (50 * 50);
             areaData.push(gridArea);
-            wheelData.push(wheelRotation);
             updateCharts();
 
             // Update progress bar
@@ -813,7 +877,7 @@
                 mode: 'lines',
                 name: 'Area',
                 line: {
-                    color: '#3498db',
+                    color: '#ed64a6',
                     width: 3
                 }
             }], {
@@ -821,11 +885,11 @@
                 xaxis: { title: 'Time' },
                 yaxis: { title: 'Area (grid units²)' },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: '#fff5f7',
                 font: {
                     family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
                     size: 14,
-                    color: '#2c3e50'
+                    color: '#d53f8c'
                 }
             });
             
@@ -836,19 +900,50 @@
                 mode: 'lines',
                 name: 'Wheel Rotation',
                 line: {
-                    color: '#9b59b6',
-                    width: 3
+                    color: '#d53f8c',
+                    width: 3,
+                    shape: 'spline'
                 }
             }], {
                 title: 'Wheel Rotation Over Time',
                 xaxis: { title: 'Time' },
-                yaxis: { title: 'Rotation (radians)' },
+                yaxis: { 
+                    title: 'Rotation (radians)',
+                    range: [-2 * Math.PI, 2 * Math.PI]
+                },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: '#fff5f7',
                 font: {
                     family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
                     size: 14,
-                    color: '#2c3e50'
+                    color: '#d53f8c'
+                }
+            });
+
+            // Velocity chart
+            Plotly.newPlot('velocityChart', [{
+                y: velocityData,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Wheel Velocity',
+                line: {
+                    color: '#ed64a6',
+                    width: 3,
+                    shape: 'spline'
+                }
+            }], {
+                title: 'Wheel Velocity Over Time',
+                xaxis: { title: 'Time' },
+                yaxis: { 
+                    title: 'Angular Velocity (radians/s)',
+                    range: [-5, 5]
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: '#fff5f7',
+                font: {
+                    family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+                    size: 14,
+                    color: '#d53f8c'
                 }
             });
         }
@@ -862,6 +957,11 @@
             // Update wheel chart
             Plotly.update('wheelChart', {
                 y: [wheelData]
+            });
+
+            // Update velocity chart
+            Plotly.update('velocityChart', {
+                y: [velocityData]
             });
         }
         
@@ -1108,6 +1208,110 @@
         
         let animationSpeed = 0.5; // Controls animation speed (lower = slower)
         let wheelOffset = 150; // Distance between tracer and wheel (increased for clearer linkage)
+
+        // Function to generate points for a circle
+        function generateCirclePoints(radius, centerX, centerY, numPoints = 100) {
+            const points = [];
+            for (let i = 0; i <= numPoints; i++) {
+                const angle = (i / numPoints) * 2 * Math.PI;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                points.push({ x, y });
+            }
+            return points;
+        }
+
+        // Function to generate points for a square with smooth animation
+        function generateSquarePoints(side, centerX, centerY, numPointsPerSide = 25) {
+            const halfSide = side / 2;
+            const points = [];
+            
+            // Generate points for each side with proper spacing
+            // Top side
+            for (let i = 0; i <= numPointsPerSide; i++) {
+                const x = centerX - halfSide + (side * i / numPointsPerSide);
+                const y = centerY - halfSide;
+                points.push({ x, y });
+            }
+            
+            // Right side
+            for (let i = 1; i <= numPointsPerSide; i++) {
+                const x = centerX + halfSide;
+                const y = centerY - halfSide + (side * i / numPointsPerSide);
+                points.push({ x, y });
+            }
+            
+            // Bottom side
+            for (let i = 1; i <= numPointsPerSide; i++) {
+                const x = centerX + halfSide - (side * i / numPointsPerSide);
+                const y = centerY + halfSide;
+                points.push({ x, y });
+            }
+            
+            // Left side
+            for (let i = 1; i <= numPointsPerSide; i++) {
+                const x = centerX - halfSide;
+                const y = centerY + halfSide - (side * i / numPointsPerSide);
+                points.push({ x, y });
+            }
+            
+            return points;
+        }
+
+        // Function to draw points with animation
+        function drawPointsWithAnimation(newPoints) {
+            // Clear existing points and canvas
+            points = [];
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            
+            let currentIndex = 0;
+            const drawInterval = setInterval(() => {
+                if (currentIndex >= newPoints.length) {
+                    clearInterval(drawInterval);
+                    return;
+                }
+                
+                const point = newPoints[currentIndex];
+                points.push(point);
+                
+                if (currentIndex > 0) {
+                    const prevPoint = newPoints[currentIndex - 1];
+                    drawingCtx.beginPath();
+                    drawingCtx.moveTo(prevPoint.x, prevPoint.y);
+                    drawingCtx.lineTo(point.x, point.y);
+                    drawingCtx.strokeStyle = '#2c3e50';
+                    drawingCtx.lineWidth = 3;
+                    drawingCtx.stroke();
+                }
+                
+                currentIndex++;
+            }, 20); // Adjust timing as needed
+        }
+
+        // Event listeners for new buttons
+        document.getElementById('circleBtn').addEventListener('click', () => {
+            const centerX = drawingCanvas.width / 2;
+            const centerY = drawingCanvas.height / 2;
+            const radius = 100; // 2 units * 50 pixels per unit
+            const circlePoints = generateCirclePoints(radius, centerX, centerY);
+            drawPointsWithAnimation(circlePoints);
+            
+            // Calculate and display ground truth area for circle
+            const groundTruthArea = Math.PI * 4; // πr² = π(2)² = 4π
+            document.getElementById('groundTruthArea').textContent = groundTruthArea.toFixed(4);
+        });
+
+        document.getElementById('squareBtn').addEventListener('click', () => {
+            const centerX = drawingCanvas.width / 2;
+            const centerY = drawingCanvas.height / 2;
+            const side = 150; // 3 units * 50 pixels per unit
+            const squarePoints = generateSquarePoints(side, centerX, centerY);
+            drawPointsWithAnimation(squarePoints);
+            
+            // Calculate and display ground truth area for square
+            const groundTruthArea = 9; // 3² = 9
+            document.getElementById('groundTruthArea').textContent = groundTruthArea.toFixed(4);
+        });
     </script>
 </body>
 </html> 
