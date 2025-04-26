@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Planimeter Simulation</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- MathJax configuration for proper TeX delimiters -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          displayMath: [['$$','$$'], ['\\[','\\]']]
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            margin: 20px;
+            text-align: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .simulation-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .main-simulation {
+            flex: 2;
+        }
+        .component-details {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .component-view {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .component-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .component-description {
+            font-size: 12px;
+            color: #34495e;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        canvas {
+            border: 2px solid #e9ecef;
+            background: white;
+        }
+        canvas.grid {
+            background-image:
+                linear-gradient(to right, #e0e0e0 1px, transparent 1px),
+                linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .controls {
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .info {
+            margin: 30px 0;
+            font-size: 20px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        .canvas-label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        .variables {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .variable {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 180px;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .variable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .variable:hover .tooltip {
+            display: block;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 200px;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 10px;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 6px 6px 6px;
+            border-style: solid;
+            border-color: transparent transparent rgba(44, 62, 80, 0.95) transparent;
+        }
+        .variable-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .variable-value {
+            color: #3498db;
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+        .charts {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            justify-content: center;
+        }
+        .chart-container {
+            flex: 1;
+            max-width: 600px;
+        }
+        .chart {
+            width: 500px;
+            height: 350px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        .planimeter-component {
+            position: absolute;
+            pointer-events: none;
+        }
+        .component-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #2c3e50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            pointer-events: none;
+        }
+        .mechanical-part {
+            position: absolute;
+            pointer-events: none;
+            border: 2px solid #7f8c8d;
+            background: #ecf0f1;
+        }
+        .chart-description {
+            text-align: left;
+            margin: 10px 20px;
+            color: #34495e;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .math-explanation {
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 800px;
+            text-align: left;
+        }
+        .math-explanation h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .math-explanation p {
+            color: #34495e;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .value-indicator {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #2c3e50;
+            pointer-events: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            overflow: hidden;
+            position: relative;
+            margin: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            transition: width 0.3s ease;
+        }
+        .mechanical-linkage {
+            position: absolute;
+            pointer-events: none;
+            border: 2px solid #95a5a6;
+            background: #ecf0f1;
+            transform-origin: 0 50%;
+        }
+        .joint {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #7f8c8d;
+            border: 2px solid #95a5a6;
+            pointer-events: none;
+        }
+        .measurement-line {
+            position: absolute;
+            border-top: 2px dashed #3498db;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Polar Planimeter Simulation</h1>
+        
+        <div class="canvas-container">
+            <div class="grid-info" style="font-size:14px;color:#555;margin-bottom:8px;">Grid: 1 unit per square</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="simulation-container">
+                <div class="main-simulation">
+                    <div>
+                        <div class="canvas-label">Draw your shape here:</div>
+                        <canvas id="drawingCanvas" class="grid" width="800" height="400"></canvas>
+                    </div>
+                    <div>
+                        <div class="canvas-label">Planimeter visualization:</div>
+                        <canvas id="calculationCanvas" class="grid" width="800" height="400"></canvas>
+                    </div>
+                </div>
+                <div class="component-details">
+                    <div class="component-view">
+                        <canvas id="wheelDetailCanvas" width="300" height="150"></canvas>
+                        <div class="component-title">Measuring Wheel Detail</div>
+                        <div class="component-description">
+                            The measuring wheel both rolls and slides. The net rotation is proportional to the area.
+                            Red arrow shows rolling direction, blue shows sliding.
+                        </div>
+                    </div>
+                    <div class="component-view">
+                        <canvas id="tracerDetailCanvas" width="300" height="150"></canvas>
+                        <div class="component-title">Tracer Movement Detail</div>
+                        <div class="component-description">
+                            The tracer point follows the curve boundary. The arm angle and wheel position
+                            continuously adjust based on this movement.
+                        </div>
+                    </div>
+                    <div class="component-view">
+                        <canvas id="poleDetailCanvas" width="300" height="150"></canvas>
+                        <div class="component-title">Pole Mechanism Detail</div>
+                        <div class="component-description">
+                            The fixed pole serves as the pivot point. The arm's rotation around this point
+                            helps convert linear motion into area measurement.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="variables">
+            <div class="variable">
+                <div class="variable-name">Tracer Position</div>
+                <div class="variable-value" id="tracerPosition">(0, 0)</div>
+                <div class="tooltip">The current position of the tracing point that follows the curve's boundary</div>
+            </div>
+            <div class="variable">
+                <div class="variable-name">Pole Position</div>
+                <div class="variable-value" id="polePosition">(0, 0)</div>
+                <div class="tooltip">The fixed pivot point around which the planimeter arm rotates</div>
+            </div>
+            <div class="variable">
+                <div class="variable-name">Wheel Rotation</div>
+                <div class="variable-value" id="wheelRotation">0°</div>
+                <div class="tooltip">The current angle of the measuring wheel, which integrates the area</div>
+            </div>
+            <div class="variable">
+                <div class="variable-name">Wheel Distance</div>
+                <div class="variable-value" id="wheelDistance">0.0000</div>
+                <div class="tooltip">Total distance traveled by the measuring wheel (in grid units)</div>
+            </div>
+            <div class="variable">
+                <div class="variable-name">Current Area</div>
+                <div class="variable-value" id="currentArea">0.0000</div>
+                <div class="tooltip">The accumulated area measured so far (in grid square units)</div>
+            </div>
+        </div>
+        
+        <div class="charts">
+            <div class="chart-container">
+                <div id="areaChart" class="chart"></div>
+                <div class="chart-description">
+                    This graph shows the accumulation of area as the tracer point moves along the boundary.
+                    The final height represents the total area enclosed by the curve.
+                </div>
+            </div>
+            <div class="chart-container">
+                <div id="wheelChart" class="chart"></div>
+                <div class="chart-description">
+                    This graph shows the measuring wheel's rotation angle over time.
+                    The net rotation of the wheel is proportional to the enclosed area.
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="clearBtn">Clear Canvas</button>
+            <button id="startBtn">Start Calculation</button>
+            <button id="stopBtn" disabled>Stop Calculation</button>
+        </div>
+        
+        <div class="info">
+            Final Area: <span id="finalArea">0</span> square units
+        </div>
+    </div>
+    
+    <div class="math-explanation">
+        <h2>How Does a Planimeter Work?</h2>
+        <p>The polar planimeter is a purely mechanical instrument that calculates area by converting the boundary of a shape into a rotation of its measuring wheel. As you guide the tracer around the perimeter, every motion—rolling and sliding—contributes to the total rotation.</p>
+        <p>When the tracer moves, it pulls on the main arm; the arm transmits force through the parallelogram linkage to hold the wheel in contact. The measuring wheel rolls along two dimensions: rolling integrates the component of motion tangential to its rotation, while sliding accounts for the perpendicular motion. Together, these movements encode the integral of <em>x dy − y dx</em> around the curve.</p>
+        <p style="text-align: center;">
+            \[ 
+            \mathrm{Area} = \oint_C x\,dy - y\,dx = L \int_0^T \omega(t)\,dt 
+            \]
+        </p>
+        <p>Here:</p>
+        <ul>
+            <li><strong>\(C\)</strong> is the closed path you trace.</li>
+            <li><strong>\(L\)</strong> is the effective arm length from the pivot to the wheel axle.</li>
+            <li><strong>\(\omega(t)\)</strong> is the instantaneous angular velocity of the measuring wheel.</li>
+            <li><strong>\(T\)</strong> is the total time (or path length) to complete the circuit.</li>
+        </ul>
+        <p>Mechanically, the planimeter is elegant: it implements Green's theorem \( \oint_C x\,dy - y\,dx = \text{area} \) through a combination of linkages and a measuring wheel, performing the integral automatically.</p>
+        <h3>Step-by-Step Operation</h3>
+        <ol>
+            <li><strong>Tracing the Curve</strong>: You drag the tracer point precisely along the shape's boundary.</li>
+            <li><strong>Main Arm Motion</strong>: The tracer pulls the main arm, pivoting around the fixed pole.</li>
+            <li><strong>Parallelogram Linkage</strong>: The two-bar linkage maintains the measuring wheel at a constant distance and orientation, converting linear tracer motion into wheel displacement.</li>
+            <li><strong>Wheel Movement</strong>: The wheel rolls on the surface (measuring tangential motion) and slides (perpendicular motion); the combination encodes the path integral.</li>
+            <li><strong>Integration</strong>: The wheel's net rotation, accumulated over the circuit, equals the enclosed area divided by the arm length \(L\).</li>
+        </ol>
+        <h3>Mechanical Components Explained</h3>
+        <ul>
+            <li><strong>Fixed Pole:</strong> A sturdy pivot anchored in place. All motion originates here.</li>
+            <li><strong>Main Arm (gray):</strong> The bar between the pole and tracer. Its length changes as you trace the shape.</li>
+            <li><strong>Parallelogram Bars:</strong> Two rigid rods of equal fixed length (green and dashed red in the animation). They never change length and maintain the constant offset of the wheel.</li>
+            <li><strong>Tracer Point (red dot):</strong> A small pin that follows the shape's edge, converting the boundary into mechanical motion.</li>
+            <li><strong>Measuring Wheel:</strong> A friction wheel that both rolls and slides, turning motion into angular rotation proportional to area.</li>
+        </ul>
+    </div>
+    
+    <script>
+        // Get the canvases and their contexts
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const calculationCanvas = document.getElementById('calculationCanvas');
+        const wheelDetailCanvas = document.getElementById('wheelDetailCanvas');
+        const tracerDetailCanvas = document.getElementById('tracerDetailCanvas');
+        const poleDetailCanvas = document.getElementById('poleDetailCanvas');
+        
+        const drawingCtx = drawingCanvas.getContext('2d');
+        const calculationCtx = calculationCanvas.getContext('2d');
+        const wheelDetailCtx = wheelDetailCanvas.getContext('2d');
+        const tracerDetailCtx = tracerDetailCanvas.getContext('2d');
+        const poleDetailCtx = poleDetailCanvas.getContext('2d');
+        
+        // Drawing state
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let points = [];
+        let calculationActive = false;
+        let currentIndex = 0;
+        let calculationInterval;
+        
+        // Planimeter state
+        let polePosition = { x: 400, y: 200 }; // Fixed pole position
+        let tracerPosition = { x: 0, y: 0 };
+        let wheelRotation = 0;
+        let wheelDistance = 0;
+        
+        // Chart data
+        let areaData = [];
+        let wheelData = [];
+        let timeData = [];
+        
+        // Drawing functions
+        function startDrawing(e) {
+            if (calculationActive) return;
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+            points = [{ x: lastX, y: lastY }];
+        }
+        
+        function draw(e) {
+            if (!isDrawing || calculationActive) return;
+            
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(lastX, lastY);
+            drawingCtx.lineTo(e.offsetX, e.offsetY);
+            drawingCtx.strokeStyle = '#2c3e50';
+            drawingCtx.lineWidth = 3;
+            drawingCtx.stroke();
+            
+            points.push({ x: e.offsetX, y: e.offsetY });
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+        
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (points.length > 2) {
+                // Close the shape
+                drawingCtx.beginPath();
+                drawingCtx.moveTo(points[0].x, points[0].y);
+                drawingCtx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+                drawingCtx.stroke();
+                points.push(points[0]);
+            }
+        }
+        
+        // Calculation functions
+        function startCalculation() {
+            if (points.length < 3) return;
+            calculationActive = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            currentIndex = 0;
+            areaData = [];
+            wheelData = [];
+            timeData = [];
+            wheelRotation = 0;
+            wheelDistance = 0;
+            
+            // Initialize charts
+            initializeCharts();
+            
+            calculationInterval = setInterval(updateCalculation, 50);
+        }
+        
+        function stopCalculation() {
+            calculationActive = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            clearInterval(calculationInterval);
+            
+            // Calculate and display final area
+            const finalArea = calculateAreaUpTo(points.length - 1);
+            document.getElementById('finalArea').textContent = (finalArea/2500).toFixed(4);
+        }
+        
+        function updateCalculation() {
+            if (currentIndex >= points.length - 1) {
+                stopCalculation();
+                return;
+            }
+            
+            const currentPoint = points[currentIndex];
+            const nextPoint = points[currentIndex + 1];
+            
+            // Update positions more smoothly using interpolation
+            const progress = (currentIndex % 1) * animationSpeed;
+            tracerPosition = {
+                x: currentPoint.x + (nextPoint.x - currentPoint.x) * progress,
+                y: currentPoint.y + (nextPoint.y - currentPoint.y) * progress
+            };
+            
+            // Calculate wheel position using parallelogram linkage based on pole-to-tracer vector
+            // Compute vector from pole to tracer
+            const apx = tracerPosition.x - polePosition.x;
+            const apy = tracerPosition.y - polePosition.y;
+            const armLen = Math.sqrt(apx*apx + apy*apy) || 1;
+            const ux = apx / armLen;
+            const uy = apy / armLen;
+            // Perpendicular unit vector
+            const vx = -uy;
+            const vy = ux;
+            // Linkage height: fixed distance from tracer to wheel
+            const h = wheelOffset;
+            // Compute parallelogram corners
+            const link1X = tracerPosition.x + vx * h;
+            const link1Y = tracerPosition.y + vy * h;
+            const link2X = polePosition.x + vx * h;
+            const link2Y = polePosition.y + vy * h;
+            // Wheel axle at link2
+            const mainWheelX = link2X;
+            const mainWheelY = link2Y;
+            
+            // Update wheel rotation based on movement
+            const distance = Math.sqrt(apx * apx + apy * apy);
+            wheelRotation = (wheelRotation + distance * 0.1 * animationSpeed) % (2 * Math.PI);
+            wheelDistance += distance * animationSpeed;
+            
+            // Draw the main visualization
+            calculationCtx.clearRect(0, 0, calculationCanvas.width, calculationCanvas.height);
+
+            // Draw the shape outline
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                calculationCtx.lineTo(points[i].x, points[i].y);
+            }
+            calculationCtx.strokeStyle = '#2c3e50';
+            calculationCtx.lineWidth = 3;
+            calculationCtx.stroke();
+            
+            // Draw mechanical base plate under pole for clarity
+            calculationCtx.beginPath();
+            calculationCtx.arc(polePosition.x, polePosition.y, 30, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#cccccc';
+            calculationCtx.fill();
+            calculationCtx.strokeStyle = '#888888';
+            calculationCtx.lineWidth = 2;
+            calculationCtx.stroke();
+
+            // Draw main arm from pole to tracer (mechanical beam)
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(polePosition.x, polePosition.y);
+            calculationCtx.lineTo(tracerPosition.x, tracerPosition.y);
+            calculationCtx.lineWidth = 8;
+            calculationCtx.strokeStyle = '#777777';
+            calculationCtx.stroke();
+            
+            // Draw joint at pole
+            calculationCtx.beginPath();
+            calculationCtx.arc(polePosition.x, polePosition.y, 6, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#7f8c8d';
+            calculationCtx.fill();
+            calculationCtx.strokeStyle = '#95a5a6';
+            calculationCtx.lineWidth = 2;
+            calculationCtx.stroke();
+            
+            // Draw joint at tracer
+            calculationCtx.beginPath();
+            calculationCtx.arc(tracerPosition.x, tracerPosition.y, 8, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#e74c3c';  // tracer in red
+            calculationCtx.fill();
+            calculationCtx.lineWidth = 2;
+            calculationCtx.strokeStyle = '#c0392b';
+            calculationCtx.stroke();
+
+            // Draw parallelogram linkage bars (two colors)
+            calculationCtx.lineWidth = 8;
+            calculationCtx.strokeStyle = '#777777';
+            calculationCtx.beginPath(); calculationCtx.moveTo(polePosition.x, polePosition.y); calculationCtx.lineTo(tracerPosition.x, tracerPosition.y); calculationCtx.stroke();
+            calculationCtx.beginPath(); calculationCtx.moveTo(link1X, link1Y); calculationCtx.lineTo(link2X, link2Y); calculationCtx.stroke();
+            // Green bar: constant-length linkage from tracer to link1
+            calculationCtx.lineWidth = 6;
+            calculationCtx.strokeStyle = '#2ecc71';
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(tracerPosition.x, tracerPosition.y);
+            calculationCtx.lineTo(link1X, link1Y);
+            calculationCtx.stroke();
+            
+            // Red dashed bar: constant-length linkage from pole to link2
+            calculationCtx.save();
+            calculationCtx.setLineDash([30, 15]);
+            calculationCtx.lineWidth = 8;
+            calculationCtx.strokeStyle = '#e74c3c';
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(polePosition.x, polePosition.y);
+            calculationCtx.lineTo(link2X, link2Y);
+            calculationCtx.stroke();
+            calculationCtx.restore();
+            
+            // Draw joints at the four corners
+            [[polePosition.x, polePosition.y],[tracerPosition.x, tracerPosition.y],[link1X,link1Y],[link2X,link2Y]].forEach(([x,y])=>{
+                calculationCtx.beginPath(); calculationCtx.arc(x,y,6,0,Math.PI*2); calculationCtx.fillStyle='#7f8c8d'; calculationCtx.fill(); calculationCtx.lineWidth=2; calculationCtx.strokeStyle='#95a5a6'; calculationCtx.stroke();
+            });
+            
+            // Draw measurement line
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(tracerPosition.x, tracerPosition.y);
+            calculationCtx.lineTo(mainWheelX, mainWheelY);
+            calculationCtx.setLineDash([5, 5]);
+            calculationCtx.strokeStyle = '#3498db';
+            calculationCtx.lineWidth = 2;
+            calculationCtx.stroke();
+            calculationCtx.setLineDash([]);
+            
+            // Draw wheel and indicators...
+            const wheelRadius = 20;
+            
+            // Wheel housing
+            calculationCtx.beginPath();
+            calculationCtx.arc(mainWheelX, mainWheelY, wheelRadius + 5, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#95a5a6';
+            calculationCtx.fill();
+            calculationCtx.strokeStyle = '#7f8c8d';
+            calculationCtx.lineWidth = 2;
+            calculationCtx.stroke();
+            
+            // Wheel
+            calculationCtx.save();
+            calculationCtx.translate(mainWheelX, mainWheelY);
+            calculationCtx.rotate(wheelRotation);
+            
+            calculationCtx.beginPath();
+            calculationCtx.arc(0, 0, wheelRadius, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#bdc3c7';
+            calculationCtx.fill();
+            calculationCtx.strokeStyle = '#7f8c8d';
+            calculationCtx.lineWidth = 3;
+            calculationCtx.stroke();
+            
+            // Wheel markings
+            for(let i = 0; i < 12; i++) {
+                calculationCtx.beginPath();
+                calculationCtx.moveTo(0, -wheelRadius);
+                calculationCtx.lineTo(0, -(wheelRadius - 5));
+                calculationCtx.strokeStyle = '#7f8c8d';
+                calculationCtx.lineWidth = 2;
+                calculationCtx.stroke();
+                calculationCtx.rotate(Math.PI / 6);
+            }
+            
+            calculationCtx.restore();
+            
+            // Draw direction indicators
+            const arrowLength = 20;
+            const arrowWidth = 6;
+            
+            // Rolling direction
+            calculationCtx.save();
+            calculationCtx.translate(mainWheelX, mainWheelY);
+            calculationCtx.rotate(Math.atan2(apy, apx));
+            
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(-arrowLength, wheelRadius + 15);
+            calculationCtx.lineTo(arrowLength, wheelRadius + 15);
+            calculationCtx.strokeStyle = '#e74c3c';
+            calculationCtx.lineWidth = 2;
+            calculationCtx.stroke();
+            
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(arrowLength, wheelRadius + 15);
+            calculationCtx.lineTo(arrowLength - arrowWidth, wheelRadius + 15 - arrowWidth);
+            calculationCtx.lineTo(arrowLength - arrowWidth, wheelRadius + 15 + arrowWidth);
+            calculationCtx.fillStyle = '#e74c3c';
+            calculationCtx.fill();
+            
+            calculationCtx.restore();
+            
+            // Draw tracer point on top of everything
+            calculationCtx.beginPath();
+            calculationCtx.arc(tracerPosition.x, tracerPosition.y, 8, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#e74c3c';
+            calculationCtx.fill();
+            calculationCtx.lineWidth = 2;
+            calculationCtx.strokeStyle = '#c0392b';
+            calculationCtx.stroke();
+
+            // Component labels
+            const labels = [
+                { text: "Fixed Pole", x: polePosition.x + 35, y: polePosition.y },
+                { text: "Measuring Wheel", x: mainWheelX + 35, y: mainWheelY },
+                { text: "Tracer Point", x: tracerPosition.x + 35, y: tracerPosition.y },
+                { text: "Linkage Arm", x: link1X + 35, y: link1Y },
+                { text: "Parallel Link", x: link2X + 35, y: link2Y }
+            ];
+            
+            labels.forEach(label => {
+                calculationCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                calculationCtx.fillRect(label.x - 2, label.y - 12, 
+                    calculationCtx.measureText(label.text).width + 4, 16);
+                calculationCtx.fillStyle = '#2c3e50';
+                calculationCtx.font = '12px Arial';
+                calculationCtx.fillText(label.text, label.x, label.y);
+            });
+            
+            // Update variables display
+            document.getElementById('tracerPosition').textContent = 
+                `(${(tracerPosition.x/50).toFixed(2)}, ${(tracerPosition.y/50).toFixed(2)})`;
+            document.getElementById('polePosition').textContent = 
+                `(${(polePosition.x/50).toFixed(2)}, ${(polePosition.y/50).toFixed(2)})`;
+            document.getElementById('wheelRotation').textContent = 
+                `${(wheelRotation * 180 / Math.PI).toFixed(1)}°`;
+            document.getElementById('wheelDistance').textContent = 
+                (wheelDistance/50).toFixed(4);
+            
+            // Calculate and update area
+            const totalArea = calculateAreaUpTo(currentIndex);
+            document.getElementById('currentArea').textContent = 
+                (totalArea/2500).toFixed(4);
+            
+            // Update charts data (in grid unit^2) and redraw
+            const gridArea = totalArea / (50 * 50);
+            areaData.push(gridArea);
+            wheelData.push(wheelRotation);
+            updateCharts();
+
+            // Update progress bar
+            const progressPercentage = (currentIndex / (points.length - 1)) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+            
+            // Update detail views
+            updateWheelDetail();
+            updateTracerDetail();
+            updatePoleDetail();
+
+            currentIndex++;
+        }
+        
+        // Shoelace formula implementation (Green's Theorem):
+        function calculateAreaUpTo(index) {
+            // This computes half the sum of (x_i * y_{i+1} - x_{i+1} * y_i) for all edges up to 'index'
+            let area = 0;
+            for (let i = 0; i < index; i++) {
+                const j = (i + 1) % points.length;
+                area += points[i].x * points[j].y;
+                area -= points[j].x * points[i].y;
+            }
+            return Math.abs(area) / 2;
+        }
+        
+        function initializeCharts() {
+            // Area chart
+            Plotly.newPlot('areaChart', [{
+                y: areaData,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Area',
+                line: {
+                    color: '#3498db',
+                    width: 3
+                }
+            }], {
+                title: 'Area Over Time',
+                xaxis: { title: 'Time' },
+                yaxis: { title: 'Area (grid units²)' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+                    size: 14,
+                    color: '#2c3e50'
+                }
+            });
+            
+            // Wheel rotation chart
+            Plotly.newPlot('wheelChart', [{
+                y: wheelData,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Wheel Rotation',
+                line: {
+                    color: '#9b59b6',
+                    width: 3
+                }
+            }], {
+                title: 'Wheel Rotation Over Time',
+                xaxis: { title: 'Time' },
+                yaxis: { title: 'Rotation (radians)' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+                    size: 14,
+                    color: '#2c3e50'
+                }
+            });
+        }
+        
+        function updateCharts() {
+            // Update area chart
+            Plotly.update('areaChart', {
+                y: [areaData]
+            });
+            
+            // Update wheel chart
+            Plotly.update('wheelChart', {
+                y: [wheelData]
+            });
+        }
+        
+        function updateWheelDetail() {
+            wheelDetailCtx.clearRect(0, 0, wheelDetailCanvas.width, wheelDetailCanvas.height);
+            
+            const centerX = wheelDetailCanvas.width / 2;
+            const centerY = wheelDetailCanvas.height / 2;
+            
+            // Draw degree markings
+            wheelDetailCtx.save();
+            wheelDetailCtx.translate(centerX, centerY);
+            for(let i = 0; i < 12; i++) {
+                const angle = i * 30;
+                const rad = angle * Math.PI / 180;
+                
+                // Draw longer marks at cardinal points
+                const isCardinal = i % 3 === 0;
+                const markLength = isCardinal ? 10 : 5;
+                
+                wheelDetailCtx.beginPath();
+                wheelDetailCtx.moveTo(Math.cos(rad) * 45, Math.sin(rad) * 45);
+                wheelDetailCtx.lineTo(Math.cos(rad) * (45 + markLength), Math.sin(rad) * (45 + markLength));
+                wheelDetailCtx.strokeStyle = '#7f8c8d';
+                wheelDetailCtx.lineWidth = isCardinal ? 2 : 1;
+                wheelDetailCtx.stroke();
+                
+                if (isCardinal) {
+                    wheelDetailCtx.save();
+                    wheelDetailCtx.translate(Math.cos(rad) * 60, Math.sin(rad) * 60);
+                    wheelDetailCtx.rotate(rad + Math.PI/2);
+                    wheelDetailCtx.fillStyle = '#34495e';
+                    wheelDetailCtx.font = '11px Arial';
+                    wheelDetailCtx.fillText(angle + '°', -10, 4);
+                    wheelDetailCtx.restore();
+                }
+            }
+            wheelDetailCtx.restore();
+            
+            // Rest of wheel detail drawing...
+            
+            // Add current rotation indicator
+            const rotationDegrees = (wheelRotation * 180 / Math.PI) % 360;
+            wheelDetailCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            wheelDetailCtx.fillRect(10, 10, 80, 20);
+            wheelDetailCtx.fillStyle = '#2c3e50';
+            wheelDetailCtx.font = '12px Arial';
+            wheelDetailCtx.fillText(`${rotationDegrees.toFixed(1)}°`, 15, 24);
+        }
+
+        function updateTracerDetail() {
+            tracerDetailCtx.clearRect(0, 0, tracerDetailCanvas.width, tracerDetailCanvas.height);
+            
+            const centerX = tracerDetailCanvas.width / 2;
+            const centerY = tracerDetailCanvas.height / 2;
+            
+            // Draw path segment
+            tracerDetailCtx.beginPath();
+            tracerDetailCtx.moveTo(centerX - 60, centerY);
+            tracerDetailCtx.quadraticCurveTo(centerX, centerY - 40, centerX + 60, centerY);
+            tracerDetailCtx.strokeStyle = '#2c3e50';
+            tracerDetailCtx.lineWidth = 2;
+            tracerDetailCtx.stroke();
+            
+            // Draw tracer point
+            const tracerX = centerX + Math.cos(wheelRotation * 2) * 30;
+            const tracerY = centerY + Math.sin(wheelRotation) * 20;
+            
+            tracerDetailCtx.beginPath();
+            tracerDetailCtx.arc(tracerX, tracerY, 15, 0, Math.PI * 2);
+            tracerDetailCtx.fillStyle = '#e74c3c';
+            tracerDetailCtx.fill();
+            tracerDetailCtx.strokeStyle = '#c0392b';
+            tracerDetailCtx.lineWidth = 3;
+            tracerDetailCtx.stroke();
+            
+            // Draw crosshair
+            tracerDetailCtx.beginPath();
+            tracerDetailCtx.moveTo(tracerX - 12, tracerY);
+            tracerDetailCtx.lineTo(tracerX + 12, tracerY);
+            tracerDetailCtx.moveTo(tracerX, tracerY - 12);
+            tracerDetailCtx.lineTo(tracerX, tracerY + 12);
+            tracerDetailCtx.strokeStyle = '#c0392b';
+            tracerDetailCtx.lineWidth = 1;
+            tracerDetailCtx.stroke();
+            
+            // Draw direction arrow
+            const arrowAngle = Math.atan2(
+                points[currentIndex + 1]?.y - points[currentIndex]?.y,
+                points[currentIndex + 1]?.x - points[currentIndex]?.x
+            ) || 0;
+            
+            tracerDetailCtx.save();
+            tracerDetailCtx.translate(tracerX, tracerY);
+            tracerDetailCtx.rotate(arrowAngle);
+            
+            tracerDetailCtx.beginPath();
+            tracerDetailCtx.moveTo(20, 0);
+            tracerDetailCtx.lineTo(35, 0);
+            tracerDetailCtx.strokeStyle = '#27ae60';
+            tracerDetailCtx.lineWidth = 3;
+            tracerDetailCtx.stroke();
+            
+            tracerDetailCtx.beginPath();
+            tracerDetailCtx.moveTo(35, 0);
+            tracerDetailCtx.lineTo(35 - 10, -5);
+            tracerDetailCtx.lineTo(35 - 10, 5);
+            tracerDetailCtx.fillStyle = '#27ae60';
+            tracerDetailCtx.fill();
+            
+            tracerDetailCtx.restore();
+            
+            // Add position indicators
+            const relativeX = (tracerX - centerX).toFixed(1);
+            const relativeY = (centerY - tracerY).toFixed(1);
+            
+            tracerDetailCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            tracerDetailCtx.fillRect(10, 10, 100, 40);
+            tracerDetailCtx.fillStyle = '#2c3e50';
+            tracerDetailCtx.font = '12px Arial';
+            tracerDetailCtx.fillText(`X: ${relativeX}`, 15, 24);
+            tracerDetailCtx.fillText(`Y: ${relativeY}`, 15, 44);
+        }
+
+        function updatePoleDetail() {
+            poleDetailCtx.clearRect(0, 0, poleDetailCanvas.width, poleDetailCanvas.height);
+            
+            const centerX = poleDetailCanvas.width / 2;
+            const centerY = poleDetailCanvas.height / 2;
+            
+            // Draw base plate
+            poleDetailCtx.beginPath();
+            poleDetailCtx.arc(centerX, centerY, 35, 0, Math.PI * 2);
+            poleDetailCtx.fillStyle = '#bdc3c7';
+            poleDetailCtx.fill();
+            poleDetailCtx.strokeStyle = '#95a5a6';
+            poleDetailCtx.lineWidth = 3;
+            poleDetailCtx.stroke();
+            
+            // Draw pole
+            poleDetailCtx.beginPath();
+            poleDetailCtx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+            poleDetailCtx.fillStyle = '#95a5a6';
+            poleDetailCtx.fill();
+            poleDetailCtx.strokeStyle = '#7f8c8d';
+            poleDetailCtx.lineWidth = 3;
+            poleDetailCtx.stroke();
+            
+            // Draw arm rotation indicator
+            const armAngle = Math.atan2(
+                tracerPosition.y - polePosition.y,
+                tracerPosition.x - polePosition.x
+            );
+            
+            poleDetailCtx.save();
+            poleDetailCtx.translate(centerX, centerY);
+            poleDetailCtx.rotate(armAngle);
+            
+            // Draw arm
+            poleDetailCtx.beginPath();
+            poleDetailCtx.moveTo(0, 0);
+            poleDetailCtx.lineTo(60, 0);
+            poleDetailCtx.strokeStyle = '#95a5a6';
+            poleDetailCtx.lineWidth = 8;
+            poleDetailCtx.stroke();
+            
+            // Draw rotation arrow
+            poleDetailCtx.beginPath();
+            poleDetailCtx.arc(0, 0, 45, -Math.PI/4, Math.PI/4);
+            poleDetailCtx.strokeStyle = '#27ae60';
+            poleDetailCtx.lineWidth = 2;
+            poleDetailCtx.stroke();
+            
+            // Arrow head
+            poleDetailCtx.beginPath();
+            poleDetailCtx.moveTo(45 * Math.cos(Math.PI/4), 45 * Math.sin(Math.PI/4));
+            poleDetailCtx.lineTo(45 * Math.cos(Math.PI/4) - 8, 45 * Math.sin(Math.PI/4) - 8);
+            poleDetailCtx.lineTo(45 * Math.cos(Math.PI/4) + 5, 45 * Math.sin(Math.PI/4) - 10);
+            poleDetailCtx.fillStyle = '#27ae60';
+            poleDetailCtx.fill();
+            
+            poleDetailCtx.restore();
+            
+            // Add angle indicator
+            const angleDegrees = (armAngle * 180 / Math.PI) % 360;
+            poleDetailCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            poleDetailCtx.fillRect(10, 10, 80, 20);
+            poleDetailCtx.fillStyle = '#2c3e50';
+            poleDetailCtx.font = '12px Arial';
+            poleDetailCtx.fillText(`${angleDegrees.toFixed(1)}°`, 15, 24);
+            
+            // Draw angle arc with degree markings
+            poleDetailCtx.save();
+            poleDetailCtx.translate(centerX, centerY);
+            
+            // Draw degree markings every 30 degrees
+            for(let i = -3; i <= 3; i++) {
+                const angle = i * 30;
+                const rad = angle * Math.PI / 180;
+                
+                poleDetailCtx.beginPath();
+                poleDetailCtx.moveTo(Math.cos(rad) * 45, Math.sin(rad) * 45);
+                poleDetailCtx.lineTo(Math.cos(rad) * 50, Math.sin(rad) * 50);
+                poleDetailCtx.strokeStyle = '#95a5a6';
+                poleDetailCtx.lineWidth = 1;
+                poleDetailCtx.stroke();
+                
+                // Add degree numbers
+                if (i !== 0) {
+                    poleDetailCtx.save();
+                    poleDetailCtx.translate(Math.cos(rad) * 60, Math.sin(rad) * 60);
+                    poleDetailCtx.rotate(rad + Math.PI/2);
+                    poleDetailCtx.fillStyle = '#34495e';
+                    poleDetailCtx.font = '11px Arial';
+                    poleDetailCtx.fillText(Math.abs(angle) + '°', -10, 4);
+                    poleDetailCtx.restore();
+                }
+            }
+            poleDetailCtx.restore();
+        }
+        
+        // Event listeners
+        drawingCanvas.addEventListener('mousedown', startDrawing);
+        drawingCanvas.addEventListener('mousemove', draw);
+        drawingCanvas.addEventListener('mouseup', stopDrawing);
+        drawingCanvas.addEventListener('mouseout', stopDrawing);
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            calculationCtx.clearRect(0, 0, calculationCanvas.width, calculationCanvas.height);
+            points = [];
+            document.getElementById('tracerPosition').textContent = '(0, 0)';
+            document.getElementById('polePosition').textContent = '(0, 0)';
+            document.getElementById('wheelRotation').textContent = '0°';
+            document.getElementById('wheelDistance').textContent = '0.0000';
+            document.getElementById('currentArea').textContent = '0.0000';
+            document.getElementById('finalArea').textContent = '0.0000';
+            Plotly.purge('areaChart');
+            Plotly.purge('wheelChart');
+        });
+        
+        document.getElementById('startBtn').addEventListener('click', startCalculation);
+        document.getElementById('stopBtn').addEventListener('click', stopCalculation);
+        
+        let animationSpeed = 0.5; // Controls animation speed (lower = slower)
+        let wheelOffset = 150; // Distance between tracer and wheel (increased for clearer linkage)
+    </script>
+</body>
+</html> 
