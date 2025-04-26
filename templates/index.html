@@ -426,8 +426,24 @@
                             helps convert linear motion into area measurement.
                         </div>
                     </div>
+                    <div class="component-view" style="height: 350px;">
+                        <canvas id="dialCanvas" width="300" height="350"></canvas>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="scaleFactor">Planimeter Constant:</label>
+                <input type="number" id="scaleFactor" value="0.1684" readonly>
+                <span class="tooltip">Fixed constant for this planimeter design</span>
+            </div>
+            <button id="clearBtn">Clear Canvas</button>
+            <button id="startBtn">Start Calculation</button>
+            <button id="stopBtn" disabled>Stop Calculation</button>
+            <button id="circleBtn">Create Circle (r=2)</button>
+            <button id="squareBtn">Create Square (s=3)</button>
         </div>
         
         <div class="variables">
@@ -503,18 +519,7 @@
             </div>
         </div>
         
-        <div class="controls">
-            <div class="control-group">
-                <label for="scaleFactor">Planimeter Constant:</label>
-                <input type="number" id="scaleFactor" value="0.1684" readonly>
-                <span class="tooltip">Fixed constant for this planimeter design</span>
-            </div>
-            <button id="clearBtn">Clear Canvas</button>
-            <button id="startBtn">Start Calculation</button>
-            <button id="stopBtn" disabled>Stop Calculation</button>
-            <button id="circleBtn">Create Circle (r=2)</button>
-            <button id="squareBtn">Create Square (s=3)</button>
-        </div>
+
         
         <div class="info">
             Final Area: <span id="finalArea">0</span> square units
@@ -890,6 +895,7 @@
             updateTracerDetail();
             updatePoleDetail();
             updateFormulaDisplay();
+            updateDial();
 
             currentIndex++;
         }
@@ -966,7 +972,8 @@
                 line: {
                     color: '#ed64a6',
                     width: 3,
-                    shape: 'spline'
+                    shape: 'spline',
+                    smoothing: 1.3  // Added smoothing
                 }
             }], {
                 title: 'Wheel Velocity Over Time',
@@ -1364,6 +1371,140 @@
             document.getElementById('formulaRotationValue').textContent = Math.abs(rotation).toFixed(2);
             document.getElementById('formulaLengthValue').textContent = L.toFixed(2);
             document.getElementById('formulaResult').textContent = area.toFixed(4);
+        }
+
+        function updateDial() {
+            const dialCanvas = document.getElementById('dialCanvas');
+            const dialCtx = dialCanvas.getContext('2d');
+            const centerX = dialCanvas.width / 2;
+            const centerY = dialCanvas.height / 2 - 25; // Move everything up a bit
+            const outerRadius = Math.min(centerX, centerY) - 20;
+            const innerRadius = outerRadius * 0.6;
+            
+            // Clear canvas
+            dialCtx.clearRect(0, 0, dialCanvas.width, dialCanvas.height);
+            
+            // Draw outer ring (angle dial)
+            dialCtx.beginPath();
+            dialCtx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+            dialCtx.strokeStyle = '#7f8c8d';
+            dialCtx.lineWidth = 3;
+            dialCtx.stroke();
+            
+            // Draw inner ring (rotation counter)
+            dialCtx.beginPath();
+            dialCtx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+            dialCtx.strokeStyle = '#7f8c8d';
+            dialCtx.lineWidth = 3;
+            dialCtx.stroke();
+            
+            // Draw degree markings
+            for(let i = 0; i < 360; i += 30) {
+                const angle = (i - 90) * Math.PI / 180;
+                const isMajor = i % 90 === 0;
+                const markLength = isMajor ? 15 : 10;
+                
+                dialCtx.beginPath();
+                dialCtx.moveTo(
+                    centerX + Math.cos(angle) * (outerRadius - markLength),
+                    centerY + Math.sin(angle) * (outerRadius - markLength)
+                );
+                dialCtx.lineTo(
+                    centerX + Math.cos(angle) * outerRadius,
+                    centerY + Math.sin(angle) * outerRadius
+                );
+                dialCtx.strokeStyle = isMajor ? '#2c3e50' : '#95a5a6';
+                dialCtx.lineWidth = isMajor ? 2 : 1;
+                dialCtx.stroke();
+                
+                if(isMajor) {
+                    dialCtx.save();
+                    dialCtx.translate(
+                        centerX + Math.cos(angle) * (outerRadius - 30),
+                        centerY + Math.sin(angle) * (outerRadius - 30)
+                    );
+                    dialCtx.rotate(angle + Math.PI/2);
+                    dialCtx.fillStyle = '#2c3e50';
+                    dialCtx.font = '14px Arial';
+                    dialCtx.textAlign = 'center';
+                    dialCtx.fillText(i.toString(), 0, 0);
+                    dialCtx.restore();
+                }
+            }
+            
+            // Draw rotation count markers
+            for(let i = 0; i <= 40; i += 5) {  // Changed from 10 to 40, marks every 5
+                const angle = (i * 9 - 90) * Math.PI / 180;  // 360/40 = 9 degrees per unit
+                const isMajor = i % 10 === 0;  // Major marks every 10 units
+                const markLength = isMajor ? 12 : 8;
+                
+                dialCtx.beginPath();
+                dialCtx.moveTo(
+                    centerX + Math.cos(angle) * innerRadius,
+                    centerY + Math.sin(angle) * innerRadius
+                );
+                dialCtx.lineTo(
+                    centerX + Math.cos(angle) * (innerRadius - markLength),
+                    centerY + Math.sin(angle) * (innerRadius - markLength)
+                );
+                dialCtx.strokeStyle = isMajor ? '#2c3e50' : '#7f8c8d';
+                dialCtx.lineWidth = isMajor ? 2 : 1;
+                dialCtx.stroke();
+                
+                if(isMajor) {
+                    dialCtx.save();
+                    dialCtx.translate(
+                        centerX + Math.cos(angle) * (innerRadius - 25),
+                        centerY + Math.sin(angle) * (innerRadius - 25)
+                    );
+                    dialCtx.rotate(angle + Math.PI/2);
+                    dialCtx.fillStyle = '#2c3e50';
+                    dialCtx.font = '12px Arial';
+                    dialCtx.fillText(i.toString(), 0, 0);
+                    dialCtx.restore();
+                }
+            }
+            
+            // Calculate rotations
+            const absRotation = Math.abs(cumulativeRotation);
+            const fullRotations = absRotation / (2 * Math.PI);
+            const remainingAngle = ((absRotation % (2 * Math.PI)) * 180 / Math.PI);
+            
+            // Draw outer needle (angle)
+            const outerAngle = (remainingAngle - 90) * Math.PI / 180;
+            dialCtx.beginPath();
+            dialCtx.moveTo(centerX, centerY);
+            dialCtx.lineTo(
+                centerX + Math.cos(outerAngle) * (outerRadius - 20),
+                centerY + Math.sin(outerAngle) * (outerRadius - 20)
+            );
+            dialCtx.strokeStyle = '#e74c3c';
+            dialCtx.lineWidth = 2;
+            dialCtx.stroke();
+            
+            // Draw inner needle (rotations)
+            const innerAngle = (fullRotations * 9 - 90) * Math.PI / 180;  // 360/40 = 9 degrees per unit
+            dialCtx.beginPath();
+            dialCtx.moveTo(centerX, centerY);
+            dialCtx.lineTo(
+                centerX + Math.cos(innerAngle) * (innerRadius - 20),
+                centerY + Math.sin(innerAngle) * (innerRadius - 20)
+            );
+            dialCtx.strokeStyle = '#3498db';
+            dialCtx.lineWidth = 2;
+            dialCtx.stroke();
+            
+            // Draw center cap
+            dialCtx.beginPath();
+            dialCtx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+            dialCtx.fillStyle = '#2c3e50';
+            dialCtx.fill();
+            
+            // Display current value - show the exact decimal value for rotations
+            dialCtx.fillStyle = '#2c3e50';
+            dialCtx.font = '14px Arial';
+            dialCtx.textAlign = 'center';
+            dialCtx.fillText(`${fullRotations.toFixed(2)} rotations = ${Math.abs(cumulativeRotation).toFixed(2)} rad`, centerX, centerY + outerRadius + 50);
         }
     </script>
 </body>
