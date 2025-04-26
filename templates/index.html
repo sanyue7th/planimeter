@@ -305,6 +305,80 @@
             border-top: 2px dashed #3498db;
             pointer-events: none;
         }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(213, 63, 140, 0.1);
+        }
+        .control-group label {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        .control-group input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #fbb6ce;
+            border-radius: 4px;
+            color: #2c3e50;
+        }
+        .control-group input:focus {
+            outline: none;
+            border-color: #ed64a6;
+            box-shadow: 0 0 0 2px rgba(237, 100, 166, 0.2);
+        }
+        .control-group .tooltip {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+        .formula-display {
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(213, 63, 140, 0.1);
+            max-width: 800px;
+        }
+        .formula-display h3 {
+            color: #d53f8c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .formula-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .formula {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #2c3e50;
+            font-family: 'Times New Roman', serif;
+        }
+        .formula-where {
+            color: #666;
+            font-style: italic;
+        }
+        .formula-terms {
+            list-style: none;
+            padding-left: 20px;
+            color: #34495e;
+        }
+        .formula-terms li {
+            margin: 5px 0;
+        }
+        .formula-result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fdf2f7;
+            border-radius: 5px;
+            color: #2c3e50;
+            font-family: 'Times New Roman', serif;
+        }
     </style>
 </head>
 <body>
@@ -369,13 +443,13 @@
             </div>
             <div class="variable">
                 <div class="variable-name">Wheel Rotation</div>
-                <div class="variable-value" id="wheelRotation">0°</div>
+                <div class="variable-value" id="wheelRotation">0.00 rad</div>
                 <div class="tooltip">The current angle of the measuring wheel, which integrates the area</div>
             </div>
             <div class="variable">
-                <div class="variable-name">Wheel Distance</div>
+                <div class="variable-name">Outline Length</div>
                 <div class="variable-value" id="wheelDistance">0.0000</div>
-                <div class="tooltip">Total distance traveled by the measuring wheel (in grid units)</div>
+                <div class="tooltip">Total length of the curve's outline (in grid units)</div>
             </div>
             <div class="variable">
                 <div class="variable-name">Planimeter Area</div>
@@ -386,6 +460,22 @@
                 <div class="variable-name">Actual Area</div>
                 <div class="variable-value" id="groundTruthArea">0.0000</div>
                 <div class="tooltip">The actual area of the shape calculated using the shoelace formula</div>
+            </div>
+        </div>
+        
+        <div class="formula-display">
+            <h3>Area Calculation</h3>
+            <div class="formula-row">
+                <span class="formula">Area = k × R × L</span>
+                <span class="formula-where">where:</span>
+                <ul class="formula-terms">
+                    <li><strong>k</strong> = 0.1684 (planimeter constant)</li>
+                    <li><strong>R</strong> = <span id="formulaRotation">0.00</span> rad (wheel rotation)</li>
+                    <li><strong>L</strong> = <span id="formulaLength">3.00</span> units (arm length)</li>
+                </ul>
+                <div class="formula-result">
+                    Area = 0.08038585209 × <span id="formulaRotationValue">0.00</span> × <span id="formulaLengthValue">3.00</span> = <span id="formulaResult">0.0000</span> square units
+                </div>
             </div>
         </div>
         
@@ -414,6 +504,11 @@
         </div>
         
         <div class="controls">
+            <div class="control-group">
+                <label for="scaleFactor">Planimeter Constant:</label>
+                <input type="number" id="scaleFactor" value="0.1684" readonly>
+                <span class="tooltip">Fixed constant for this planimeter design</span>
+            </div>
             <button id="clearBtn">Clear Canvas</button>
             <button id="startBtn">Start Calculation</button>
             <button id="stopBtn" disabled>Stop Calculation</button>
@@ -462,6 +557,12 @@
     </div>
     
     <script>
+        // Constants
+        const PLANIMETER_CONSTANT = 0.1684;
+        const WHEEL_RADIUS = 10; // pixels
+        const WHEEL_CIRCUMFERENCE = 50; // 1 grid unit = 50 pixels
+        let scaleFactor = 1.0;
+        
         // Get the canvases and their contexts
         const drawingCanvas = document.getElementById('drawingCanvas');
         const calculationCanvas = document.getElementById('calculationCanvas');
@@ -566,9 +667,11 @@
             document.getElementById('stopBtn').disabled = true;
             clearInterval(calculationInterval);
             
-            // Calculate and display final area using shoelace formula
-            const finalArea = calculateAreaUpTo(points.length - 1);
-            document.getElementById('currentArea').textContent = (finalArea/2500).toFixed(4);
+            // Calculate final area using wheel rotation and scale factor
+            scaleFactor = PLANIMETER_CONSTANT;
+            const finalArea = Math.abs(cumulativeRotation) * scaleFactor * 3; // Using arm length of 3
+            document.getElementById('currentArea').textContent = finalArea.toFixed(4);
+            document.getElementById('finalArea').textContent = finalArea.toFixed(4);
         }
         
         function updateCalculation() {
@@ -580,34 +683,34 @@
             const currentPoint = points[currentIndex];
             const nextPoint = points[currentIndex + 1];
             
-            // Calculate path direction and change
+            // Calculate vectors and distances
             const dx = nextPoint.x - currentPoint.x;
             const dy = nextPoint.y - currentPoint.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const ds = Math.sqrt(dx * dx + dy * dy);
             
-            // Calculate center-relative vectors for current and next points
-            const centerX = drawingCanvas.width / 2;
-            const centerY = drawingCanvas.height / 2;
-            const currentRadialX = currentPoint.x - centerX;
-            const currentRadialY = currentPoint.y - centerY;
-            const nextRadialX = nextPoint.x - centerX;
-            const nextRadialY = nextPoint.y - centerY;
+            // Calculate perpendicular distance from pole to path segment
+            const midX = (currentPoint.x + nextPoint.x) / 2 - polePosition.x;
+            const midY = (currentPoint.y + nextPoint.y) / 2 - polePosition.y;
+            const pathDirX = dx / ds;
+            const pathDirY = dy / ds;
             
-            // Calculate angular velocity using cross product
-            const crossProduct = currentRadialX * nextRadialY - currentRadialY * nextRadialX;
-            const currentRadius = Math.sqrt(currentRadialX * currentRadialX + currentRadialY * currentRadialY);
-            const nextRadius = Math.sqrt(nextRadialX * nextRadialX + nextRadialY * nextRadialY);
-            const avgRadius = (currentRadius + nextRadius) / 2;
+            // Calculate perpendicular vector to path
+            const perpX = -pathDirY;
+            const perpY = pathDirX;
             
-            // Time step in seconds
-            const timeDelta = 0.05; // 50ms
+            // Calculate perpendicular distance (h) from pole to path
+            const h = Math.abs(midX * perpX + midY * perpY);
             
-            // Angular velocity = (cross product) / (r^2 * dt)
-            const angularVelocity = crossProduct / (avgRadius * avgRadius * timeDelta);
-            
-            // Update cumulative rotation
-            if (currentIndex > 0) {
-                cumulativeRotation += angularVelocity * timeDelta;
+            // Calculate wheel rotation based on perpendicular distance and path length
+            if (currentIndex > 0 && ds > 0) {
+                const crossProduct = dx * midY - dy * midX;
+                const sign = -Math.sign(crossProduct);
+                
+                // For a wheel with circumference of 1 grid unit:
+                // - One full rotation (2π radians) = 1 grid unit of circumference
+                // - Need to convert from pixels to grid units (divide by 50)
+                const rotationChange = sign * (h * ds) / (50 * 50);
+                cumulativeRotation += rotationChange;
             }
             
             // Update positions more smoothly using interpolation
@@ -625,33 +728,27 @@
             const uy = apy / armLen;
             const vx = -uy;
             const vy = ux;
-            const h = wheelOffset;
-            const link1X = tracerPosition.x + vx * h;
-            const link1Y = tracerPosition.y + vy * h;
-            const link2X = polePosition.x + vx * h;
-            const link2Y = polePosition.y + vy * h;
+            const h_offset = wheelOffset;
+            const link1X = tracerPosition.x + vx * h_offset;
+            const link1Y = tracerPosition.y + vy * h_offset;
+            const link2X = polePosition.x + vx * h_offset;
+            const link2Y = polePosition.y + vy * h_offset;
             const mainWheelX = link2X;
             const mainWheelY = link2Y;
             
-            // Update wheel rotation and distance
-            wheelRotation = (cumulativeRotation + Math.PI) % (2 * Math.PI);
-            wheelDistance += distance * animationSpeed;
-            
-            // Apply light smoothing to velocity for display
-            const smoothingFactor = 0.1;
-            const lastVelocity = velocityData.length > 0 ? velocityData[velocityData.length - 1] : angularVelocity;
-            const smoothedVelocity = lastVelocity * (1 - smoothingFactor) + angularVelocity * smoothingFactor;
-            
-            velocityData.push(smoothedVelocity);
-            wheelData.push(cumulativeRotation);
-            
-            // Calculate and update area using shoelace formula
-            const totalArea = calculateAreaUpTo(currentIndex);
-            document.getElementById('currentArea').textContent = (totalArea/2500).toFixed(4);
-            
-            // Update displays
-            document.getElementById('wheelDistance').textContent = "3.0000";
+            // Update wheel rotation display
+            wheelRotation = cumulativeRotation;
             document.getElementById('wheelRotation').textContent = `${cumulativeRotation.toFixed(2)} rad`;
+            
+            // Calculate area based on wheel rotation and scale factor
+            // Area = k × |R| × L where k is the planimeter constant, R is rotation, and L is arm length
+            scaleFactor = PLANIMETER_CONSTANT;
+            const planimeterArea = Math.abs(cumulativeRotation) * scaleFactor * 3; // Using arm length of 3
+            document.getElementById('currentArea').textContent = planimeterArea.toFixed(4);
+            
+            // Update wheel distance
+            wheelDistance += ds / 50;
+            document.getElementById('wheelDistance').textContent = wheelDistance.toFixed(4);
             
             // Draw the main visualization
             calculationCtx.clearRect(0, 0, calculationCanvas.width, calculationCanvas.height);
@@ -683,29 +780,14 @@
             calculationCtx.strokeStyle = '#777777';
             calculationCtx.stroke();
             
-            // Draw joint at pole
-            calculationCtx.beginPath();
-            calculationCtx.arc(polePosition.x, polePosition.y, 6, 0, Math.PI * 2);
-            calculationCtx.fillStyle = '#7f8c8d';
-            calculationCtx.fill();
-            calculationCtx.strokeStyle = '#95a5a6';
-            calculationCtx.lineWidth = 2;
-            calculationCtx.stroke();
-            
-            // Draw joint at tracer
-            calculationCtx.beginPath();
-            calculationCtx.arc(tracerPosition.x, tracerPosition.y, 8, 0, Math.PI * 2);
-            calculationCtx.fillStyle = '#e74c3c';  // tracer in red
-            calculationCtx.fill();
-            calculationCtx.lineWidth = 2;
-            calculationCtx.strokeStyle = '#c0392b';
-            calculationCtx.stroke();
-
             // Draw parallelogram linkage bars (two colors)
             calculationCtx.lineWidth = 8;
             calculationCtx.strokeStyle = '#777777';
-            calculationCtx.beginPath(); calculationCtx.moveTo(polePosition.x, polePosition.y); calculationCtx.lineTo(tracerPosition.x, tracerPosition.y); calculationCtx.stroke();
-            calculationCtx.beginPath(); calculationCtx.moveTo(link1X, link1Y); calculationCtx.lineTo(link2X, link2Y); calculationCtx.stroke();
+            calculationCtx.beginPath();
+            calculationCtx.moveTo(link1X, link1Y);
+            calculationCtx.lineTo(link2X, link2Y);
+            calculationCtx.stroke();
+            
             // Green bar: constant-length linkage from tracer to link1
             calculationCtx.lineWidth = 6;
             calculationCtx.strokeStyle = '#2ecc71';
@@ -727,7 +809,13 @@
             
             // Draw joints at the four corners
             [[polePosition.x, polePosition.y],[tracerPosition.x, tracerPosition.y],[link1X,link1Y],[link2X,link2Y]].forEach(([x,y])=>{
-                calculationCtx.beginPath(); calculationCtx.arc(x,y,6,0,Math.PI*2); calculationCtx.fillStyle='#7f8c8d'; calculationCtx.fill(); calculationCtx.lineWidth=2; calculationCtx.strokeStyle='#95a5a6'; calculationCtx.stroke();
+                calculationCtx.beginPath();
+                calculationCtx.arc(x,y,6,0,Math.PI*2);
+                calculationCtx.fillStyle='#7f8c8d';
+                calculationCtx.fill();
+                calculationCtx.lineWidth=2;
+                calculationCtx.strokeStyle='#95a5a6';
+                calculationCtx.stroke();
             });
             
             // Draw measurement line
@@ -740,109 +828,57 @@
             calculationCtx.stroke();
             calculationCtx.setLineDash([]);
             
-            // Draw wheel and indicators...
-            const wheelRadius = 20;
+            // Draw wheel as seen from above
+            calculationCtx.save();
+            calculationCtx.translate(mainWheelX, mainWheelY);
             
-            // Wheel housing
+            // Draw wheel as ellipse with fixed radius
+            const wheelHeight = WHEEL_RADIUS * 0.4; // Perspective scaling
             calculationCtx.beginPath();
-            calculationCtx.arc(mainWheelX, mainWheelY, wheelRadius + 5, 0, Math.PI * 2);
-            calculationCtx.fillStyle = '#95a5a6';
+            calculationCtx.ellipse(0, 0, WHEEL_RADIUS, wheelHeight, 0, 0, Math.PI * 2);
+            calculationCtx.fillStyle = '#bdc3c7';
             calculationCtx.fill();
             calculationCtx.strokeStyle = '#7f8c8d';
             calculationCtx.lineWidth = 2;
             calculationCtx.stroke();
             
-            // Wheel
-            calculationCtx.save();
-            calculationCtx.translate(mainWheelX, mainWheelY);
-            calculationCtx.rotate(wheelRotation);
+            // Draw wheel markings to show rotation
+            const numMarkings = 8;
+            for(let i = 0; i < numMarkings; i++) {
+                const angle = (i / numMarkings) * Math.PI * 2 + wheelRotation;
+                const x1 = Math.cos(angle) * WHEEL_RADIUS;
+                const y1 = Math.sin(angle) * wheelHeight;
+                const x2 = Math.cos(angle) * (WHEEL_RADIUS - 2);
+                const y2 = Math.sin(angle) * (wheelHeight - 1);
+                
+                calculationCtx.beginPath();
+                calculationCtx.moveTo(x1, y1);
+                calculationCtx.lineTo(x2, y2);
+                calculationCtx.strokeStyle = '#34495e';
+                calculationCtx.lineWidth = 2;
+                calculationCtx.stroke();
+            }
             
+            // Draw axle line
             calculationCtx.beginPath();
-            calculationCtx.arc(0, 0, wheelRadius, 0, Math.PI * 2);
-            calculationCtx.fillStyle = '#bdc3c7';
-            calculationCtx.fill();
+            calculationCtx.moveTo(-WHEEL_RADIUS, 0);
+            calculationCtx.lineTo(WHEEL_RADIUS, 0);
             calculationCtx.strokeStyle = '#7f8c8d';
             calculationCtx.lineWidth = 3;
             calculationCtx.stroke();
             
-            // Wheel markings
-            for(let i = 0; i < 12; i++) {
-                calculationCtx.beginPath();
-                calculationCtx.moveTo(0, -wheelRadius);
-                calculationCtx.lineTo(0, -(wheelRadius - 5));
-                calculationCtx.strokeStyle = '#7f8c8d';
-                calculationCtx.lineWidth = 2;
-                calculationCtx.stroke();
-                calculationCtx.rotate(Math.PI / 6);
-            }
-            
             calculationCtx.restore();
-            
-            // Draw direction indicators
-            const arrowLength = 20;
-            const arrowWidth = 6;
-            
-            // Rolling direction
-            calculationCtx.save();
-            calculationCtx.translate(mainWheelX, mainWheelY);
-            calculationCtx.rotate(Math.atan2(apy, apx));
-            
-            calculationCtx.beginPath();
-            calculationCtx.moveTo(-arrowLength, wheelRadius + 15);
-            calculationCtx.lineTo(arrowLength, wheelRadius + 15);
-            calculationCtx.strokeStyle = '#e74c3c';
-            calculationCtx.lineWidth = 2;
-            calculationCtx.stroke();
-            
-            calculationCtx.beginPath();
-            calculationCtx.moveTo(arrowLength, wheelRadius + 15);
-            calculationCtx.lineTo(arrowLength - arrowWidth, wheelRadius + 15 - arrowWidth);
-            calculationCtx.lineTo(arrowLength - arrowWidth, wheelRadius + 15 + arrowWidth);
-            calculationCtx.fillStyle = '#e74c3c';
-            calculationCtx.fill();
-            
-            calculationCtx.restore();
-            
-            // Draw tracer point on top of everything
-            calculationCtx.beginPath();
-            calculationCtx.arc(tracerPosition.x, tracerPosition.y, 8, 0, Math.PI * 2);
-            calculationCtx.fillStyle = '#e74c3c';
-            calculationCtx.fill();
-            calculationCtx.lineWidth = 2;
-            calculationCtx.strokeStyle = '#c0392b';
-            calculationCtx.stroke();
-
-            // Component labels
-            const labels = [
-                { text: "Fixed Pole", x: polePosition.x + 35, y: polePosition.y },
-                { text: "Measuring Wheel", x: mainWheelX + 35, y: mainWheelY },
-                { text: "Tracer Point", x: tracerPosition.x + 35, y: tracerPosition.y },
-                { text: "Linkage Arm", x: link1X + 35, y: link1Y },
-                { text: "Parallel Link", x: link2X + 35, y: link2Y }
-            ];
-            
-            labels.forEach(label => {
-                calculationCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                calculationCtx.fillRect(label.x - 2, label.y - 12, 
-                    calculationCtx.measureText(label.text).width + 4, 16);
-                calculationCtx.fillStyle = '#2c3e50';
-                calculationCtx.font = '12px Arial';
-                calculationCtx.fillText(label.text, label.x, label.y);
-            });
             
             // Update variables display
             document.getElementById('tracerPosition').textContent = 
                 `(${(tracerPosition.x/50).toFixed(2)}, ${(tracerPosition.y/50).toFixed(2)})`;
             document.getElementById('polePosition').textContent = 
                 `(${(polePosition.x/50).toFixed(2)}, ${(polePosition.y/50).toFixed(2)})`;
-            document.getElementById('wheelRotation').textContent = 
-                `${cumulativeRotation.toFixed(2)} rad`;
-            document.getElementById('wheelDistance').textContent = 
-                "3.0000";
             
-            // Update charts data (in grid unit^2) and redraw
-            const gridArea = totalArea / (50 * 50);
-            areaData.push(gridArea);
+            // Update charts data and redraw
+            areaData.push(planimeterArea);
+            wheelData.push(cumulativeRotation);
+            velocityData.push(ds > 0 ? h / wheelOffset : 0);
             updateCharts();
 
             // Update progress bar
@@ -853,6 +889,7 @@
             updateWheelDetail();
             updateTracerDetail();
             updatePoleDetail();
+            updateFormulaDisplay();
 
             currentIndex++;
         }
@@ -909,7 +946,7 @@
                 xaxis: { title: 'Time' },
                 yaxis: { 
                     title: 'Rotation (radians)',
-                    range: [-2 * Math.PI, 2 * Math.PI]
+                    autorange: true
                 },
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: '#fff5f7',
@@ -1195,7 +1232,7 @@
             points = [];
             document.getElementById('tracerPosition').textContent = '(0, 0)';
             document.getElementById('polePosition').textContent = '(0, 0)';
-            document.getElementById('wheelRotation').textContent = '0°';
+            document.getElementById('wheelRotation').textContent = '0.00 rad';
             document.getElementById('wheelDistance').textContent = '0.0000';
             document.getElementById('currentArea').textContent = '0.0000';
             document.getElementById('finalArea').textContent = '0.0000';
@@ -1312,6 +1349,22 @@
             const groundTruthArea = 9; // 3² = 9
             document.getElementById('groundTruthArea').textContent = groundTruthArea.toFixed(4);
         });
+
+        // Add this function to update the formula display
+        function updateFormulaDisplay() {
+            const rotation = cumulativeRotation;
+            const k = PLANIMETER_CONSTANT; // Planimeter constant
+            const L = 3.0; // Fixed arm length
+            
+            // Calculate the exact same way as planimeterArea
+            const area = Math.abs(rotation) * k * L;
+            
+            document.getElementById('formulaRotation').textContent = rotation.toFixed(2);
+            document.getElementById('formulaLength').textContent = L.toFixed(2);
+            document.getElementById('formulaRotationValue').textContent = Math.abs(rotation).toFixed(2);
+            document.getElementById('formulaLengthValue').textContent = L.toFixed(2);
+            document.getElementById('formulaResult').textContent = area.toFixed(4);
+        }
     </script>
 </body>
 </html> 
